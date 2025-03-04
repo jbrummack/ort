@@ -1,25 +1,15 @@
 [package]
 name = "ort-sys"
-description = "Unsafe Rust bindings for ONNX Runtime 1.20 - Optimize and Accelerate Machine Learning Inferencing"
 version = "2.0.0-rc.9"
 edition = "2021"
-rust-version = "1.80"
 links = "onnxruntime"
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/pykeio/ort"
-homepage = "https://ort.pyke.io/"
-keywords = [ "machine-learning", "ai", "ml", "onnxruntime", "sys"]
-categories = [ "algorithms", "mathematics", "science" ]
-authors = [
-	"pyke.io <contact@pyke.io>"
-]
-include = [ "src/", "dist.txt", "build.rs", "LICENSE-APACHE", "LICENSE-MIT" ]
 
 [features]
-default = [ "std" ]
+default = ["std"]
 std = []
 training = []
-download-binaries = [ "ureq", "tar", "flate2", "sha2" ]
+download-binaries = ["ureq", "tar", "flate2", "sha2", "zip"]
+use_cocoapod = ["ureq", "tar", "flate2", "sha2", "zip"]
 load-dynamic = []
 copy-dylibs = []
 
@@ -46,8 +36,12 @@ webgpu = []
 azure = []
 
 [build-dependencies]
-ureq = { version = "3", optional = true, default-features = false, features = [ "native-tls", "socks-proxy" ] }
+ureq = { version = "3", optional = true, default-features = false, features = [
+    "native-tls",
+    "socks-proxy",
+] }
 tar = { version = "0.4", optional = true }
 flate2 = { version = "1.0", optional = true }
 sha2 = { version = "0.10", optional = true }
 pkg-config = "0.3.30"
+zip = { version = "2.2.3", optional = true }

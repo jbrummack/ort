@@ -34,7 +34,7 @@ mod windows {
 		ffi::{OsString, c_void},
 		os::windows::prelude::OsStringExt,
 		path::PathBuf,
-		ptr, slice
+		ptr, slice,
 	};
 
 	#[repr(C)]
@@ -43,7 +43,7 @@ mod windows {
 		data1: u32,
 		data2: u16,
 		data3: u16,
-		data4: [u8; 8]
+		data4: [u8; 8],
 	}
 
 	impl GUID {
@@ -53,7 +53,7 @@ mod windows {
 				data2: ((uuid >> 80) & 0xffff) as u16,
 				data3: ((uuid >> 64) & 0xffff) as u16,
 				#[allow(clippy::cast_possible_truncation)]
-				data4: (uuid as u64).to_be_bytes()
+				data4: (uuid as u64).to_be_bytes(),
 			}
 		}
 	}
@@ -108,7 +108,7 @@ mod unix {
 		mem,
 		os::unix::prelude::OsStringExt,
 		path::PathBuf,
-		ptr
+		ptr,
 	};
 
 	type uid_t = u32;
@@ -122,7 +122,7 @@ mod unix {
 		pub pw_gid: gid_t,
 		pub pw_gecos: *mut c_char,
 		pub pw_dir: *mut c_char,
-		pub pw_shell: *mut c_char
+		pub pw_shell: *mut c_char,
 	}
 
 	extern "C" {
@@ -155,7 +155,7 @@ mod unix {
 		unsafe fn fallback() -> Option<OsString> {
 			let amt = match sysconf(SC_GETPW_R_SIZE_MAX) {
 				n if n < 0 => 512,
-				n => n as usize
+				n => n as usize,
 			};
 			let mut buf = Vec::with_capacity(amt);
 			let mut passwd: passwd = mem::zeroed();
@@ -166,7 +166,7 @@ mod unix {
 					let bytes = CStr::from_ptr(ptr).to_bytes();
 					if bytes.is_empty() { None } else { Some(OsStringExt::from_vec(bytes.to_vec())) }
 				}
-				_ => None
+				_ => None,
 			}
 		}
 	}
@@ -181,6 +181,12 @@ pub fn cache_dir() -> Option<std::path::PathBuf> {
 }
 
 #[cfg(target_os = "macos")]
+#[must_use]
+pub fn cache_dir() -> Option<std::path::PathBuf> {
+	self::unix::home_dir().map(|h| h.join("Library/Caches").join(PYKE_ROOT))
+}
+
+#[cfg(target_os = "ios")]
 #[must_use]
 pub fn cache_dir() -> Option<std::path::PathBuf> {
 	self::unix::home_dir().map(|h| h.join("Library/Caches").join(PYKE_ROOT))
