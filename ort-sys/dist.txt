@@ -17,5 +17,6 @@ train	aarch64-apple-darwin	https://cdn.pyke.io/0/pyke:ort-rs/ms@1.21.0/aarch64-a
 train	x86_64-apple-darwin	https://cdn.pyke.io/0/pyke:ort-rs/ms@1.21.0/x86_64-apple-darwin+train.tgz	29926DB6CB43222EDC57E23E9CE9CDFA41C372F6243EAF31A47E66CE9E9A1FCF
 none	aarch64-apple-darwin	https://cdn.pyke.io/0/pyke:ort-rs/ms@1.21.0/aarch64-apple-darwin.tgz	DEB27935DDD908484D26262C681746DBCA453A24E648E5279D9274FC9F02F06A
 none	x86_64-apple-darwin	https://cdn.pyke.io/0/pyke:ort-rs/ms@1.21.0/x86_64-apple-darwin.tgz	6950B414DDB10B86E8DC4C12B96EF56461E049B4A4B30119100E9A59239CBEE1
-none	aarch64-apple-ios	https://pub-0834561aa212412cabade90660ee4161.r2.dev/ios_test.tgz	ea51bd33cfe236652a8209092576a3e00f28d056020ea0a8bb47b433f1f7e0a6
-none	aarch64-apple-ios-sim	https://pub-0834561aa212412cabade90660ee4161.r2.dev/onnxruntime-1.21.0-ios-arm64_x86_64-simulator.tgz	7253cff01a1cdb684902a95d038757b8c56078bf639bab8c6476b1eca90e11cd
+none	aarch64-apple-ios	https://pub-0834561aa212412cabade90660ee4161.r2.dev/onnxruntime-1.21.0-ios-arm64.tgz	4538d42e40d6762d96d858befaed136d7b5c4e30f425dd8b289a6e27707cfe19
+none	aarch64-apple-ios-sim	https://pub-0834561aa212412cabade90660ee4161.r2.dev/onnxruntime-1.21.0-ios-sim-arm64.tgz	459331d49ba30778b944c1890258df1a9b4df93489e44742f7c052e3b798645c
+none	x86_64-apple-ios-sim	https://pub-0834561aa212412cabade90660ee4161.r2.dev/onnxruntime-1.21.0-ios-sim-x86_64.tgz	2ffcacef91725340a4240b6679e33e67ebd4c13f214fbe37bd0d82f52ea7ab8d
