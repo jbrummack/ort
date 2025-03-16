@@ -20,3 +20,4 @@ none	x86_64-apple-darwin	https://cdn.pyke.io/0/pyke:ort-rs/ms@1.21.0/x86_64-appl
 none	aarch64-apple-ios	https://pub-0834561aa212412cabade90660ee4161.r2.dev/onnxruntime-1.21.0-ios-arm64.tgz	d3d28fbd4ed466e0eae88f6916a189a4a0668e227f560e777e23ba936a2a39b5
 none	aarch64-apple-ios-sim	https://pub-0834561aa212412cabade90660ee4161.r2.dev/onnxruntime-1.21.0-ios-sim-arm64.tgz	c509ab9149f11ee563fcbd0e4781a7e302c674902e206df9f2ffa56964074969
 none	x86_64-apple-ios-sim	https://pub-0834561aa212412cabade90660ee4161.r2.dev/onnxruntime-1.21.0-ios-sim-x86_64.tgz	87ea20cf8531ea9bc65b3c6c0af376a39cbbd7c6af0290ddb233b69325101168
+none	x86_64-apple-ios	https://pub-0834561aa212412cabade90660ee4161.r2.dev/onnxruntime-1.21.0-ios-sim-x86_64.tgz	87ea20cf8531ea9bc65b3c6c0af376a39cbbd7c6af0290ddb233b69325101168
