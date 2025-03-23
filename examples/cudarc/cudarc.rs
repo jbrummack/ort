@@ -1,18 +1,34 @@
-#![allow(clippy::manual_retain)]
-
 use std::{ops::Mul, path::Path};
 
+use cudarc::driver::{CudaDevice, DevicePtr, DevicePtrMut, sys::CUdeviceptr};
 use image::{GenericImageView, ImageBuffer, Rgba, imageops::FilterType};
 use ndarray::Array;
-use ort::{execution_providers::CUDAExecutionProvider, inputs, session::Session, value::TensorRef};
+use ort::{
+	execution_providers::{CUDAExecutionProvider, ExecutionProvider},
+	memory::{AllocationDevice, AllocatorType, MemoryInfo, MemoryType},
+	session::Session,
+	tensor::Shape,
+	value::TensorRefMut
+};
 use show_image::{AsImageView, WindowOptions, event};
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[show_image::main]
-fn main() -> ort::Result<()> {
-	tracing_subscriber::fmt::init();
+fn main() -> anyhow::Result<()> {
+	// Initialize tracing to receive debug messages from `ort`
+	tracing_subscriber::registry()
+		.with(tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info,ort=debug".into()))
+		.with(tracing_subscriber::fmt::layer())
+		.init();
 
+	#[rustfmt::skip]
 	ort::init()
-		.with_execution_providers([CUDAExecutionProvider::default().build()])
+		.with_execution_providers([
+			CUDAExecutionProvider::default()
+				.build()
+				// exit the program with an error if the CUDA EP fails to register
+				.error_on_failure()
+		])
 		.commit()?;
 
 	let mut session =
@@ -31,13 +47,23 @@ fn main() -> ort::Result<()> {
 		input[[0, 2, y, x]] = (b as f32 - 127.5) / 127.5;
 	}
 
-	let outputs = session.run(inputs!["input" => TensorRef::from_array_view(input.view())?])?;
+	let device = CudaDevice::new(0)?;
+	let device_data = device.htod_sync_copy(&input.into_raw_vec())?;
+	let tensor: TensorRefMut<'_, f32> = unsafe {
+		TensorRefMut::from_raw(
+			MemoryInfo::new(AllocationDevice::CUDA, 0, AllocatorType::Device, MemoryType::Default)?,
+			(*device_data.device_ptr() as usize as *mut ()).cast(),
+			Shape::from([1, 3, 512, 512])
+		)
+		.unwrap()
+	};
+	let outputs = session.run(ort::inputs![tensor])?;
 
-	let output = outputs["output"].try_extract_tensor::<f32>()?;
+	let output = outputs["output"].try_extract_array::<f32>()?;
 
 	// convert to 8-bit
 	let output = output.mul(255.0).map(|x| *x as u8);
-	let (output, _) = output.into_raw_vec_and_offset();
+	let output = output.into_raw_vec();
 
 	// change rgb to rgba
 	let output_img = ImageBuffer::from_fn(512, 512, |x, y| {

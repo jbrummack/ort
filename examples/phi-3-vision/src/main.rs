@@ -1,4 +1,3 @@
-mod image_process;
 use std::{path::Path, time::Instant};
 
 use anyhow::Result;
@@ -9,6 +8,7 @@ use ort::{
 	value::{Tensor, TensorRef}
 };
 use tokenizers::Tokenizer;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 const VISION_MODEL_NAME: &str = "phi-3-v-128k-instruct-vision.onnx";
 const TEXT_EMBEDDING_MODEL_NAME: &str = "phi-3-v-128k-instruct-text-embedding.onnx";
@@ -18,6 +18,12 @@ const MAX_LENGTH: usize = 1000; // max length of the generated text
 const EOS_TOKEN_ID: i64 = 32007; // <|end|>
 const USER_TOKEN_ID: i64 = 32010; // <|user|>
 const VOCAB_SIZE: usize = 32064;
+
+mod image_process;
+// Include common code for `ort` examples that allows using the various feature flags to enable different EPs and
+// backends.
+#[path = "../../common/mod.rs"]
+mod common;
 
 #[allow(dead_code)]
 fn get_current_time() -> Instant {
@@ -38,7 +44,7 @@ fn get_image_embedding(vision_model: &mut Session, img: &Option<DynamicImage>) -
 			"pixel_values" => Tensor::from_array(result.pixel_values)?,
 			"image_sizes" => Tensor::from_array(result.image_sizes)?,
 		])?;
-		let predictions_view: ArrayView<f32, _> = outputs["visual_features"].try_extract_tensor::<f32>()?;
+		let predictions_view: ArrayView<f32, _> = outputs["visual_features"].try_extract_array::<f32>()?;
 		predictions_view.into_dimensionality::<Ix3>()?.to_owned()
 	} else {
 		Array::zeros((1, 0, 0))
@@ -50,7 +56,7 @@ fn get_text_embedding(text_embedding_model: &mut Session, input_ids: &Array2<i64
 	let outputs = text_embedding_model.run(ort::inputs![
 		"input_ids" => TensorRef::from_array_view(input_ids)?,
 	])?;
-	let inputs_embeds_view: ArrayView<f32, _> = outputs["inputs_embeds"].try_extract_tensor::<f32>()?;
+	let inputs_embeds_view: ArrayView<f32, _> = outputs["inputs_embeds"].try_extract_array::<f32>()?;
 	let inputs_embeds = inputs_embeds_view.into_dimensionality::<Ix3>()?.to_owned();
 	Ok(inputs_embeds)
 }
@@ -169,7 +175,7 @@ pub async fn generate_text(
 		// current version.
 		//
 		// The selected token ID will be in the range [0, VOCAB_SIZE - 1].
-		let logits: ArrayView<f32, _> = model_outputs["logits"].try_extract_tensor::<f32>()?.into_dimensionality::<Ix3>()?;
+		let logits: ArrayView<f32, _> = model_outputs["logits"].try_extract_array::<f32>()?.into_dimensionality::<Ix3>()?;
 		let next_token_id = logits
 			.slice(s![0, -1, ..VOCAB_SIZE])
 			.iter()
@@ -194,11 +200,11 @@ pub async fn generate_text(
 		attention_mask = Array2::ones((1, attention_mask.shape()[1] + 1));
 		for i in 0..32 {
 			past_key_values[i * 2] = model_outputs[format!("present.{}.key", i)]
-				.try_extract_tensor::<f32>()?
+				.try_extract_array::<f32>()?
 				.into_dimensionality::<Ix4>()?
 				.to_owned();
 			past_key_values[i * 2 + 1] = model_outputs[format!("present.{}.value", i)]
-				.try_extract_tensor::<f32>()?
+				.try_extract_array::<f32>()?
 				.into_dimensionality::<Ix4>()?
 				.to_owned();
 		}
@@ -209,7 +215,14 @@ pub async fn generate_text(
 
 #[tokio::main]
 async fn main() -> Result<()> {
-	tracing_subscriber::fmt().init(); // set up default subscriber with log level `INFO`
+	// Initialize tracing to receive debug messages from `ort`
+	tracing_subscriber::registry()
+		.with(tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info,ort=debug".into()))
+		.with(tracing_subscriber::fmt::layer())
+		.init();
+
+	// Register EPs based on feature flags - this isn't crucial for usage and can be removed.
+	common::init()?;
 
 	let data_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("data");
 	let tokenizer = Tokenizer::from_file(data_dir.join("tokenizer.json")).map_err(|e| anyhow::anyhow!("Error loading tokenizer: {:?}", e))?;

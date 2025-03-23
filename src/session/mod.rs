@@ -10,7 +10,7 @@
 //! # }
 //! ```
 
-use alloc::{boxed::Box, ffi::CString, format, string::String, sync::Arc, vec::Vec};
+use alloc::{boxed::Box, format, string::String, sync::Arc, vec::Vec};
 use core::{
 	any::Any,
 	ffi::{CStr, c_char},
@@ -20,6 +20,8 @@ use core::{
 	ptr::{self, NonNull},
 	slice
 };
+#[cfg(feature = "std")]
+use std::ffi::CString;
 
 use smallvec::SmallVec;
 
@@ -390,7 +392,7 @@ impl Session {
 	/// ```
 	/// # use std::sync::Arc;
 	/// # use ort::{session::{Session, run_options::RunOptions}, value::{Value, ValueType, TensorRef}, tensor::TensorElementType};
-	/// # fn main() -> ort::Result<()> { tokio_test::block_on(async {
+	/// # fn main() -> ort::Result<()> { tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap().block_on(async {
 	/// let mut session = Session::builder()?.with_intra_threads(2)?.commit_from_file("tests/data/upsample.onnx")?;
 	/// let input = ndarray::Array4::<f32>::zeros((1, 64, 64, 3));
 	/// let options = RunOptions::new()?;
@@ -434,7 +436,11 @@ impl Session {
 		let mut input_ort_values = SmallVec::with_capacity(input_values.len());
 		for input in input_values {
 			input_ort_values.push(input.ptr());
-			input_inner_holders.push(Arc::clone(input.inner()));
+			input_inner_holders.push(Arc::clone(match input {
+				SessionInputValue::ViewMut(v) => &(**v).inner,
+				SessionInputValue::View(v) => &(**v).inner,
+				SessionInputValue::Owned(v) => &v.inner
+			}));
 		}
 
 		let (output_names, mut output_tensors) = run_options.outputs.resolve_outputs(&self.outputs);

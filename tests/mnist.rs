@@ -7,7 +7,6 @@ use ort::{
 	tensor::ArrayExtensions,
 	value::TensorRef
 };
-use test_log::test;
 
 #[test]
 fn mnist_5() -> ort::Result<()> {
@@ -53,7 +52,7 @@ fn mnist_5() -> ort::Result<()> {
 	let outputs = session.run(inputs![TensorRef::from_array_view(&array)?])?;
 
 	let mut probabilities: Vec<(usize, f32)> = outputs[0]
-		.try_extract_tensor()?
+		.try_extract_array()?
 		.softmax(ndarray::Axis(1))
 		.iter()
 		.copied()
